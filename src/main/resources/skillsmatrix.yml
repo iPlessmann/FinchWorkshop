@@ -1,0 +1,404 @@
+swagger: '2.0'
+info:
+  description: This is the API for skill matrix
+  version: '1.0'
+  title: Skill Matrix API
+  contact:
+    email: inaki.de.tejada@lunatech.com
+  license:
+    name: 'Apache 2.0'
+    url: 'http://www.apache.org/lincenses/LICENSE-2.0.html'
+
+  # all paths will be relative to the basePath specified
+  # basePath: /v1
+host: localhost.com
+basePath: /v1
+
+schemes:
+  - https
+
+securityDefinitions:
+  OauthSecurity:
+    type: oauth2
+    flow: accessCode
+    authorizationUrl: 'https://oauth.simple.api/authorization'
+    tokenUrl: 'https://oauth.simple.api/token'
+    scopes:
+      admin: Admin scope
+      user: User scope
+
+security:
+  - OauthSecurity:
+    - user
+
+paths:
+  /ping:
+    get:
+      security: []
+      summary: ping
+      operationId: ping
+      produces:
+        - application/json
+      responses:
+        200:
+          description: successful operation
+          schema:
+            type: string
+  /users/{userId}:
+    get:
+      summary: Get user by id
+      operationId: getUserById
+      security:
+        - OauthSecurity:
+          - admin
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/userId'
+      responses:
+        200:
+          description: successful operation
+          schema:
+            $ref: '#/definitions/User'
+        401:
+          $ref: '#/responses/Standard401ErrorMessage'
+        403:
+          $ref: '#/responses/Standard403ErrorMessage'
+        404:
+          description: User not found
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          $ref: '#/responses/Standard500ErrorMessage'
+
+  /users/{userId}/skills:
+    get:
+      summary: get all skills entered by users
+      operationId: searchUserSkills
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/userId'
+        - $ref: '#/parameters/searchString'
+        - $ref: '#/parameters/skip'
+        - $ref: '#/parameters/limit'
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/SkillForUser'
+        401:
+          $ref: '#/responses/Standard401ErrorMessage'
+        403:
+          $ref: '#/responses/Standard403ErrorMessage'
+        404:
+          description: User not found
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          $ref: '#/responses/Standard500ErrorMessage'
+
+  /users/me/skillmatrix:
+    post:
+      summary: adds a skill to the current logged in user' skill matrix
+      operationId: addSkill
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/skillForUserItem'
+      responses:
+        201:
+          description: created
+          schema:
+            $ref: '#/definitions/SkillForUser'
+        400:
+          $ref: '#/responses/Standard400ErrorMessage'
+        401:
+          $ref: '#/responses/Standard401ErrorMessage'
+        403:
+          $ref: '#/responses/Standard403ErrorMessage'
+        500:
+          $ref: '#/responses/Standard500ErrorMessage'
+
+  /users/me/skillmatrix/{skillMatrixId}:
+    put:
+      summary: Update an existing skill of the logged in user
+      operationId: updateSkill
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/skillMatrixId'
+        - $ref: '#/parameters/skillForUserItem'
+      responses:
+        200:
+          description: updated
+          schema:
+            $ref: '#/definitions/SkillForUser'
+        400:
+          $ref: '#/responses/Standard400ErrorMessage'
+        401:
+          $ref: '#/responses/Standard401ErrorMessage'
+        403:
+          $ref: '#/responses/Standard403ErrorMessage'
+        404:
+          description: Skill not found
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          $ref: '#/responses/Standard500ErrorMessage'
+
+    delete:
+      summary: deletes a skill from the logged in user's list
+      operationId: deleteSkill
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/skillMatrixId'
+      responses:
+        200:
+          description: ok
+        401:
+          $ref: '#/responses/Standard401ErrorMessage'
+        403:
+          $ref: '#/responses/Standard403ErrorMessage'
+        404:
+          description: Skill not found
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          $ref: '#/responses/Standard500ErrorMessage'
+  /skills:
+    get:
+      summary: get all skills entered by users
+      operationId: searchSkills
+      produces:
+        - application/json
+      security:
+        - OauthSecurity:
+          - admin
+      parameters:
+        - $ref: '#/parameters/searchString'
+        - $ref: '#/parameters/skip'
+        - $ref: '#/parameters/limit'
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Skill'
+        401:
+          $ref: '#/responses/Standard401ErrorMessage'
+        403:
+          $ref: '#/responses/Standard403ErrorMessage'
+        500:
+          $ref: '#/responses/Standard500ErrorMessage'
+
+  /skillmatrix:
+    get:
+      summary: get all skills entered by users together with info about users
+      operationId: searchMatrix
+      produces:
+        - application/json
+      security:
+        - OauthSecurity:
+          - admin
+      parameters:
+        - $ref: '#/parameters/searchString'
+        - $ref: '#/parameters/skip'
+        - $ref: '#/parameters/limit'
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/GetSkillMatrixResponse'
+        401:
+          $ref: '#/responses/Standard401ErrorMessage'
+        403:
+          $ref: '#/responses/Standard403ErrorMessage'
+        500:
+          $ref: '#/responses/Standard500ErrorMessage'
+
+
+  /skillmatrix/{skillId}:
+    get:
+      summary: get all info related to a skill
+      description: get info such as the number of users who posses the skill, the level, etc
+      security:
+        - OauthSecurity:
+          - admin
+      produces:
+        - application/json
+      parameters:
+        - $ref: '#/parameters/skillId'
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/GetInfoForSkillResponse'
+        401:
+          $ref: '#/responses/Standard401ErrorMessage'
+        403:
+          $ref: '#/responses/Standard403ErrorMessage'
+        500:
+          $ref: '#/responses/Standard500ErrorMessage'
+
+definitions:
+  Skill:
+    type: object
+    required:
+      - name
+      - type
+    properties:
+      id:
+        type: string
+        format: int64
+      name:
+        type: string
+        example: Erlang
+      type:
+        $ref: '#/definitions/SkillType'
+
+  SkillType:
+    type: string
+    enum:
+      - language
+      - library
+      - framework
+      - conceptual
+
+  SkillForUser:
+    type: object
+    properties:
+      skill:
+        $ref: '#/definitions/Skill'
+      level:
+        $ref: '#/definitions/SkillLevel'
+
+  SkillLevel:
+    type: string
+    enum:
+      - can teach
+      - comfortable
+      - dabbed
+      - fossil
+
+  GetSkillMatrixResponse:
+    type: object
+    properties:
+      skillId:
+        type: string
+        format: int64
+      skillName:
+        type: string
+      countUsers:
+        type: string
+
+  GetInfoForSkillResponse:
+    type: object
+    properties:
+      skillName:
+        type: string
+      users:
+        type: array
+        items:
+          $ref: '#/definitions/User'
+
+  User:
+    type: object
+    properties:
+      id:
+        type: string
+        format: int64
+      firstName:
+        type: string
+      lastName:
+        type: string
+      email:
+        type: string
+        example: tanya.moldovan@lunatech.com
+      password:
+        type: string
+
+  Error:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+
+responses:
+  Standard500ErrorMessage:
+    description: An unexpected error occured
+    schema:
+      $ref: '#/definitions/Error'
+  Standard401ErrorMessage:
+    description: You are not authenticated into the system
+    schema:
+      $ref: '#/definitions/Error'
+  Standard403ErrorMessage:
+    description: You do not have the necessary permissions
+    schema:
+      $ref: '#/definitions/Error'
+  Standard400ErrorMessage:
+    description: Invalid input
+    schema:
+      $ref: '#/definitions/Error'
+
+parameters:
+  skillId:
+    in: path
+    name: skillId
+    description: The id of the desired skill
+    type: string
+    required: true
+  skillMatrixId:
+    in: path
+    name: skillMatrixId
+    description: The id of the skill from the user's skill matrix
+    type: string
+    required: true
+  userId:
+    in: path
+    name: userId
+    required: true
+    type: string
+    format: uuid
+  searchString:
+    in: query
+    name: searchString
+    description: Pass an optional search string for looking the data set
+    required: false
+    type: string
+  skip:
+    in: query
+    name: skip
+    description: Number of records to skip for pagination
+    type: integer
+    format: int32
+    minimum: 0
+  limit:
+    in: query
+    name: limit
+    description: Maximum number of records to return
+    type: integer
+    format: int32
+    minimum: 0
+    maximum: 50
+  skillForUserItem:
+    in: body
+    name: skillForUserItem
+    description: Skill that needs to be added or updated
+    required: true
+    schema:
+      $ref: '#/definitions/SkillForUser'
