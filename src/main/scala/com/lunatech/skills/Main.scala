@@ -27,13 +27,14 @@ import io.finch.circe._
   *   $ http DELETE :8081/users
   * }}}
   */
-object Main extends TwitterServer with UserApi {
+object Main extends TwitterServer with UserApi with SkillApi {
 
   val port: Flag[Int] = flag("port", 8081, "TCP port for HTTP server")
 
-  val usersCounter: Counter = statsReceiver.counter("users")
+  val usersCounter: Counter  = statsReceiver.counter("users")
+  val skillsCounter: Counter = statsReceiver.counter("skills")
 
-  val api: Service[Request, Response] = userApi
+  val api: Service[Request, Response] = (userApi :+: skillApi)
     .handle({
       case e: UserNotFound => NotFound(e)
     })
